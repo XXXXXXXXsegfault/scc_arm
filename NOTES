@@ -1,0 +1,4 @@
+NOTES
+* You can compile this program on x86_64 Linux and ARM Linux.
+* This program can only run on ARM Cortex-A7-compatible machines.
+* This program can only run on Linux-based systems.
