@@ -27,6 +27,7 @@ struct syntax_tree *parse_num_id(void)
 {
 	struct l_word_list *oldword;
 	struct syntax_tree *ret;
+	int x,s;
 	oldword=current;
 	ret=0;
 	if(current==0)
@@ -35,7 +36,29 @@ struct syntax_tree *parse_num_id(void)
 	}
 	if(cstr[0]>='0'&&cstr[0]<='9'||cstr[0]=='\''||cstr[0]=='\"')
 	{
-		ret=mkst("Constant",cstr,line,col);
+		x=0;
+		s=0;
+		while(cstr[x])
+		{
+			if(cstr[x]=='.')
+			{
+				s=1;
+				break;
+			}
+			++x;
+		}
+		if(cstr[0]=='\''||cstr[0]=='\"')
+		{
+			s=0;
+		}
+		if(s)
+		{
+			ret=mkst("FConstant",cstr,line,col);
+		}
+		else
+		{
+			ret=mkst("Constant",cstr,line,col);
+		}
 		next();
 	}
 	else if(cstr[0]>='A'&&cstr[0]<='Z'||cstr[0]>='a'&&cstr[0]<='z'||cstr[0]=='_')

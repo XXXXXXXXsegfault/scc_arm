@@ -24,23 +24,6 @@ struct syntax_tree *syntax_tree_dup(struct syntax_tree *root)
 	}
 	return node;
 }
-void syntax_tree_release(struct syntax_tree *root)
-{
-	int x;
-	x=0;
-	if(root==0)
-	{
-		return;
-	}
-	while(x<root->count_subtrees)
-	{
-		syntax_tree_release(root->subtrees[x]);
-		++x;
-	}
-	free(root->value);
-	free(root->subtrees);
-	free(root);
-}
 struct id_tab
 {
 	char *name;
@@ -49,6 +32,13 @@ struct id_tab
 	struct id_tab *next;
 	long int def;
 };
+struct label_tab
+{
+	char *name;
+	long int line;
+	long int col;
+	struct label_tab *next;
+} *label_use,*label_def[1021];
 struct struct_tab
 {
 	char *name;
@@ -78,6 +68,7 @@ struct translate_env
 	struct translate_stack *stack;
 	int write;
 	int label_in_use;
+	long int func_num;
 	struct control_labels *label;
 	struct control_labels *break_label;
 } t_env;

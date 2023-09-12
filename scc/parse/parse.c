@@ -1,49 +1,3 @@
-struct l_word_list *p_locate_brackets(struct l_word_list *start,struct l_word_list *end)
-{
-	int n;
-	char *left,*right;
-	n=1;
-	if(!start)
-	{
-		return 0;
-	}
-	if(!strcmp(start->str,"("))
-	{
-		left="(";
-		right=")";
-	}
-	else if(!strcmp(start->str,"["))
-	{
-		left="[";
-		right="]";
-	}
-	else if(!strcmp(start->str,"{"))
-	{
-		left="{";
-		right="}";
-	}
-	else
-	{
-		return 0;
-	}
-	start=start->next;
-	while(start&&start!=end&&n)
-	{
-		if(!strcmp(start->str,left))
-		{
-			++n;
-		}
-		if(!strcmp(start->str,right))
-		{
-			--n;
-		}
-	}
-	if(start==end)
-	{
-		return 0;
-	}
-	return start;
-}
 struct syntax_tree
 {
 	char *name;
@@ -81,6 +35,23 @@ void st_add_subtree(struct syntax_tree *st,struct syntax_tree *subtree)
 	++st->count_subtrees;
 	free(st->subtrees);
 	st->subtrees=subtrees;
+}
+void syntax_tree_release(struct syntax_tree *root)
+{
+	int x;
+	x=0;
+	if(root==0)
+	{
+		return;
+	}
+	while(x<root->count_subtrees)
+	{
+		syntax_tree_release(root->subtrees[x]);
+		++x;
+	}
+	free(root->value);
+	free(root->subtrees);
+	free(root);
 }
 struct l_word_list *p_current_word;
 long int p_current_line;
@@ -194,28 +165,22 @@ void parse_global_init(void)
 	p_current_line=1;
 	p_current_col=1;
 	keyw_list[0]="break";
-	keyw_list[1]="case";
-	keyw_list[2]="char";
-	keyw_list[3]="continue";
-	keyw_list[4]="default";
-	keyw_list[5]="do";
-	keyw_list[6]="else";
-	keyw_list[7]="extern";
-	keyw_list[8]="for";
-	keyw_list[9]="goto";
-	keyw_list[10]="if";
-	keyw_list[11]="int";
-	keyw_list[12]="long";
-	keyw_list[13]="return";
-	keyw_list[14]="short";
-	keyw_list[15]="signed";
-	keyw_list[16]="sizeof";
-	keyw_list[17]="static";
-	keyw_list[18]="switch";
-	keyw_list[19]="typedef";
-	keyw_list[20]="union";
-	keyw_list[21]="unsigned";
-	keyw_list[22]="void";
-	keyw_list[23]="while";
-	keyw_list[24]="asm";
+	keyw_list[1]="char";
+	keyw_list[2]="do";
+	keyw_list[3]="else";
+	keyw_list[4]="extern";
+	keyw_list[5]="goto";
+	keyw_list[6]="if";
+	keyw_list[7]="int";
+	keyw_list[8]="long";
+	keyw_list[9]="return";
+	keyw_list[10]="short";
+	keyw_list[11]="signed";
+	keyw_list[12]="sizeof";
+	keyw_list[13]="static";
+	keyw_list[14]="union";
+	keyw_list[15]="unsigned";
+	keyw_list[16]="void";
+	keyw_list[17]="while";
+	keyw_list[18]="asm";
 }

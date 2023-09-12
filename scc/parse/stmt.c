@@ -377,9 +377,36 @@ struct syntax_tree *parse_goto_stmt(void)
 	next();
 	return ret;
 }
+struct syntax_tree *parse_label_stmt(void)
+{
+	struct syntax_tree *ret,*node;
+	struct l_word_list *oldword;
+	oldword=current;
+	ret=mkst("Label",0,line,col);
+	node=parse_id();
+	if(!node)
+	{
+		syntax_tree_release(ret);
+		resume();
+		return 0;
+	}
+	st_add_subtree(ret,node);
+	if(strcmp(cstr,":"))
+	{
+		syntax_tree_release(ret);
+		resume();
+		return 0;
+	}
+	next();
+	return ret;
+}
 struct syntax_tree *parse_stmt(void)
 {
 	struct syntax_tree *ret;
+	if(ret=parse_label_stmt())
+	{
+		return ret;
+	}
 	if(ret=parse_stmt_block())
 	{
 		return ret;

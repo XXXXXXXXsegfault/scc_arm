@@ -120,6 +120,44 @@ void translate_break(struct syntax_tree *root)
 	free(name);
 
 }
+void translate_goto(struct syntax_tree *root)
+{
+	char *name;
+	struct label_tab *node;
+	c_write("bal ",4);
+	name=xstrdup("_$CL$");
+	name=str_i_app(name,t_env.func_num);
+	name=str_s_app(name,"$");
+	name=str_s_app(name,root->subtrees[0]->value);
+	c_write(name,strlen(name));
+	c_write("\n",1);
+	node=xmalloc(sizeof(*node));
+	node->name=name;
+	node->line=root->line;
+	node->col=root->col;
+	node->next=label_use;
+	label_use=node;
+}
+void translate_label(struct syntax_tree *root)
+{
+	char *name;
+	struct label_tab *node;
+	int index;
+	c_write("label ",6);
+	name=xstrdup("_$CL$");
+	name=str_i_app(name,t_env.func_num);
+	name=str_s_app(name,"$");
+	name=str_s_app(name,root->subtrees[0]->value);
+	c_write(name,strlen(name));
+	c_write("\n",1);
+	node=xmalloc(sizeof(*node));
+	node->name=name;
+	node->line=root->line;
+	node->col=root->col;
+	index=name_hash(name);
+	node->next=label_def[index];
+	label_def[index]=node;
+}
 void translate_ifelse(struct syntax_tree *root)
 {
 	struct branch_args args;
@@ -163,7 +201,7 @@ void translate_stmt(struct syntax_tree *node)
 	}
 	if(!strcmp(node->name,"extern_decl"))
 	{
-		translate_extern_decl(node);
+		error(node->line,node->col,"\'extern\' not supported.");
 	}
 	else if(!strcmp(node->name,"expr"))
 	{
@@ -197,6 +235,14 @@ void translate_stmt(struct syntax_tree *node)
 	else if(!strcmp(node->name,"break"))
 	{
 		translate_break(node);
+	}
+	else if(!strcmp(node->name,"goto"))
+	{
+		translate_goto(node);
+	}
+	else if(!strcmp(node->name,"Label"))
+	{
+		translate_label(node);
 	}
 
 }

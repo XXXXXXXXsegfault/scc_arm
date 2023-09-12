@@ -1,4 +1,4 @@
-char *basic_type_str[7];
+char *basic_type_str[9];
 struct syntax_tree *parse_decl(void);
 struct syntax_tree *parse_type(void);
 struct syntax_tree *parse_id_null(void)
@@ -69,11 +69,11 @@ struct syntax_tree *parse_basic_type(void)
 		{
 			if(t[4])
 			{
-				return mkst("u32",0,l,c);
+				return mkst("u64",0,l,c);
 			}
 			else
 			{
-				return mkst("s32",0,l,c);
+				return mkst("s64",0,l,c);
 			}
 		}
 		else

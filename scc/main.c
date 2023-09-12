@@ -32,6 +32,8 @@ int name_hash(char *str)
 int main(int argc,char **argv)
 {
 	struct syntax_tree *root;
+	struct label_tab *node,*p;
+	int index;
 	if(argc<3)
 	{
 		return 1;
@@ -54,6 +56,23 @@ int main(int argc,char **argv)
 	p_current_word=l_words_head;
 	root=parse_file();
 	translate_file(root);
+	node=label_use;
+	while(node)
+	{
+		index=name_hash(node->name);
+		p=label_def[index];
+		while(p)
+		{
+			if(!strcmp(p->name,node->name))
+			{
+				goto Defined;
+			}
+			p=p->next;
+		}
+		error(node->line,node->col,"label not defined.");
+Defined:
+		node=node->next;
+	}
 	out_flush();
 
 	return 0;
