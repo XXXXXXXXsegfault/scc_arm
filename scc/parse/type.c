@@ -65,17 +65,6 @@ struct syntax_tree *parse_basic_type(void)
 				return mkst("s16",0,l,c);
 			}
 		}
-		else if(t[3])
-		{
-			if(t[4])
-			{
-				return mkst("u64",0,l,c);
-			}
-			else
-			{
-				return mkst("s64",0,l,c);
-			}
-		}
 		else
 		{
 			if(t[4])
