@@ -2,12 +2,12 @@ struct syntax_tree
 {
 	char *name;
 	char *value;
-	long int line;
-	long int col;
-	long int count_subtrees;
+	int line;
+	int col;
+	int count_subtrees;
 	struct syntax_tree **subtrees;
 };
-struct syntax_tree *mkst(char *name,char *value,long int line,long int col)
+struct syntax_tree *mkst(char *name,char *value,int line,int col)
 {
 	struct syntax_tree *node;
 	node=xmalloc(sizeof(*node));
@@ -54,8 +54,8 @@ void syntax_tree_release(struct syntax_tree *root)
 	free(root);
 }
 struct l_word_list *p_current_word;
-long int p_current_line;
-long int p_current_col;
+int p_current_line;
+int p_current_col;
 void parse_next(void)
 {
 	if(p_current_word==0)
@@ -142,7 +142,19 @@ struct syntax_tree *parse_file(void)
 		{
 			st_add_subtree(ret,node);
 		}
+		else if(node=parse_namespace())
+		{
+			st_add_subtree(ret,node);
+		}
 		else if(node=parse_asm())
+		{
+			st_add_subtree(ret,node);
+		}
+		else if(node=parse_stackoverflowprotection_on())
+		{
+			st_add_subtree(ret,node);
+		}
+		else if(node=parse_stackoverflowprotection_off())
 		{
 			st_add_subtree(ret,node);
 		}
@@ -172,15 +184,17 @@ void parse_global_init(void)
 	keyw_list[5]="goto";
 	keyw_list[6]="if";
 	keyw_list[7]="int";
-	keyw_list[8]="long";
-	keyw_list[9]="return";
-	keyw_list[10]="short";
-	keyw_list[11]="signed";
-	keyw_list[12]="sizeof";
-	keyw_list[13]="static";
-	keyw_list[14]="union";
-	keyw_list[15]="unsigned";
-	keyw_list[16]="void";
-	keyw_list[17]="while";
-	keyw_list[18]="asm";
+	keyw_list[8]="return";
+	keyw_list[9]="short";
+	keyw_list[10]="signed";
+	keyw_list[11]="sizeof";
+	keyw_list[12]="static";
+	keyw_list[13]="union";
+	keyw_list[14]="unsigned";
+	keyw_list[15]="void";
+	keyw_list[16]="while";
+	keyw_list[17]="asm";
+	keyw_list[18]="namespace";
+	keyw_list[19]="stackoverflowprotection_on";
+	keyw_list[20]="stackoverflowprotection_off";
 }

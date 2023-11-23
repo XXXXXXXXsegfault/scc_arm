@@ -1,5 +1,3 @@
-#include "../include/lib.c"
-int fdi,fdo;
 int current_line;
 void error(int line,char *msg)
 {
@@ -25,28 +23,15 @@ int name_hash(char *str)
 }
 int readc(void)
 {
-	static unsigned char buf[65536];
-	static int x,n;
-	int n1,c;
-	if(x==n)
-	{
-		n1=read(fdi,buf,65536);
-		if(n1<=0)
-		{
-			return -1;
-		}
-		n=n1;
-		x=0;
-	}
-	c=buf[x];
-	++x;
-	return c;
+	return stream_getc();
 }
 char *read_line(void)
 {
 	char *str;
-	int c;
+	char c;
+	int x;
 	str=0;
+	x=0;
 	while((c=readc())!=-1)
 	{
 		if(c=='\n')
@@ -57,7 +42,8 @@ char *read_line(void)
 			}
 			break;
 		}
-		str=str_c_app(str,c);
+		str=str_c_app2(str,x,c);
+		++x;
 	}
 	++current_line;
 	return str;
@@ -141,24 +127,10 @@ char *sdup(char *str)
 #include "fg.c"
 #include "gencode.c"
 
-int main(int argc,char **argv)
+void bcode_run(void)
 {
 	char *str;
 	struct ins *node;
-	if(argc<3)
-	{
-		return 1;
-	}
-	fdi=open(argv[1],0,0);
-	if(fdi<0)
-	{
-		return 1;
-	}
-	fdo=open(argv[2],578,0644);
-	if(fdo<0)
-	{
-		return 1;
-	}
 	while(str=read_line())
 	{
 		ins_add(str);
@@ -170,7 +142,6 @@ int main(int argc,char **argv)
 	load_local_vars();
 	reg_init();
 	write_msg();
-	outs(".align 2\n");
 	node=ins_head;
 	while(node)
 	{
@@ -182,5 +153,4 @@ int main(int argc,char **argv)
 	out_num32(data_size);
 	outs("\n");
 	out_flush();
-	return 0;
 }

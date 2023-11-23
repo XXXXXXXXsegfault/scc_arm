@@ -1,15 +1,15 @@
 #include "../include/lib.c"
-long int current_line;
+int current_line;
 int fdi,fdo;
 int include_level;
 int is_comment;
 char *current_file;
-long int macro_state;
+int macro_state;
 struct lines_list
 {
 	char *str;
-	long int line;
-	long int fline;
+	int line;
+	int fline;
 	char *fname;
 	struct lines_list *next;
 } *lines_head,*lines_end;
@@ -70,7 +70,7 @@ char *read_line(int fd)
 {
 	char *str;
 	char c;
-	long int x;
+	int x;
 	str=0;
 	while(read(fd,&c,1)==1)
 	{
@@ -78,7 +78,12 @@ char *read_line(int fd)
 		{
 			if(read(fd,&c,1)==1)
 			{
-				if(c=='\n')
+				if(c=='\r')
+				{
+					read(fd,&c,1);
+					++current_line;
+				}
+				else if(c=='\n')
 				{
 					++current_line;
 				}
@@ -207,7 +212,7 @@ int main(int argc,char **argv)
 	{
 		return 1;
 	}
-	load_file(-100,argv[1],fdi,1);
+	load_file(".",argv[1],fdi,1);
 	l=lines_head;
 	while(l)
 	{
@@ -302,5 +307,7 @@ int main(int argc,char **argv)
 		l=l->next;
 	}
 	out_flush();
+	close(fdi);
+	close(fdo);
 	return 0;
 }

@@ -73,14 +73,15 @@ char *read_str(char c)
 {
 	char *s;
 	char c1;
-	int line,col;
+	int line,col,x;
 	s=0;
+	x=0;
 	line=l_current_line;
 	col=l_current_col;
 	s=str_c_app(s,c);
 	while((c1=l_getc())!=-1)
 	{
-		s=str_c_app(s,c1);
+		s=str_c_app2(s,x,c1);
 		if(c1==c)
 		{
 			break;
@@ -92,8 +93,14 @@ char *read_str(char c)
 			{
 				break;
 			}
-			s=str_c_app(s,c1);
+			s=str_c_app2(s,x,c1);
+			++x;
 		}
+		else if(c1=='\n'||c1=='\r')
+		{
+			error(line,col,"string not complete.");
+		}
+		++x;
 	}
 	if(c1==-1)
 	{
@@ -104,10 +111,12 @@ char *read_str(char c)
 char *l_read_word(void)
 {
 	char *s;
-	int c;
+	int c,x;
 	int line,col;
 	char *msg;
+	int s1;
 	s=0;
+	x=0;
 	line=l_current_line;
 	col=l_current_col;
 	while((c=l_getc())!=-1)
@@ -123,11 +132,31 @@ char *l_read_word(void)
 	}
 	if(c>='A'&&c<='Z'||c>='a'&&c<='z'||c>='0'&&c<='9'||c=='_')
 	{
-		s=str_c_app(s,c);
-		c=l_getc();
-		while(c>='A'&&c<='Z'||c>='a'&&c<='z'||c>='0'&&c<='9'||c=='_')
+		s1=0;
+		if(!(c>='0'&&c<='9'))
 		{
-			s=str_c_app(s,c);
+			s1=2;
+		}
+		s=str_c_app2(s,x,c);
+		c=l_getc();
+		while(c>='A'&&c<='Z'||c>='a'&&c<='z'||c>='0'&&c<='9'||c=='_'||c=='.')
+		{
+			if(c=='.')
+			{
+				if(s1==0)
+				{
+					s=str_c_app2(s,x,c);
+					++x;
+					c=l_getc();
+					s1=1;
+				}
+				else
+				{
+					break;
+				}
+			}
+			s=str_c_app2(s,x,c);
+			++x;
 			c=l_getc();
 		}
 		if(c!=-1)

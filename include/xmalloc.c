@@ -61,6 +61,38 @@ char *str_c_app(char *s,int c)
 	}
 	return new_str;
 }
+char *str_c_app2(char *s,int off,int c)
+{
+	char *new_str;
+	int l,l1,l2;
+	if(s==0)
+	{
+		new_str=xmalloc(16);
+		new_str[0]=c;
+		new_str[1]=0;
+	}
+	else
+	{
+		l=strlen(s+off)+off;
+		l1=__str_size(l+1);
+		l2=__str_size(l+2);
+		if(l1==l2)
+		{
+			new_str=s;
+			new_str[l]=c;
+			new_str[l+1]=0;
+		}
+		else
+		{
+			new_str=xmalloc(l2);
+			memcpy(new_str,s,l);
+			new_str[l]=c;
+			new_str[l+1]=0;
+			free(s);
+		}
+	}
+	return new_str;
+}
 char *str_s_app(char *s,char *s2)
 {
 	while(*s2)
@@ -70,7 +102,7 @@ char *str_s_app(char *s,char *s2)
 	}
 	return s;
 }
-char *str_i_app(char *s,unsigned long int n)
+char *str_i_app(char *s,unsigned int n)
 {
 	unsigned int a;
 	a=1000000000;

@@ -1,16 +1,16 @@
 struct branch_args
 {
-	long int ltrue;
-	long int lfalse;
+	int ltrue;
+	int lfalse;
 };
-void write_label_name(long int num)
+void write_label_name(int num)
 {
 	char *str;
 	str=str_i_app(0,num);
 	c_write(str,strlen(str));
 	free(str);
 }
-void write_label(long int num)
+void write_label(int num)
 {
 	c_write("label ",6);
 	write_label_name(num);

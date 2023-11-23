@@ -307,7 +307,7 @@ void __free(struct __malloc_zone *zone)
 		zone->size+=end->size;
 		__malloc_zone_add(zone);
 	}
-	if((char *)zone+zone->size==__current_brk+__heap_size&&zone->size>=262144)
+	if((char *)zone+zone->size==__current_brk+__heap_size&&zone->size>=32768)
 	{
 		__malloc_zone_del(zone);
 		__set_heap_size(__heap_size-zone->size);

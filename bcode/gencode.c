@@ -568,6 +568,30 @@ void gen_code(struct ins *ins)
 		{
 			gen_st(ins,5);
 		}
+		else if(!strcmp(ins->args[0],"ldob"))
+		{
+			gen_ldo(ins,1);
+		}
+		else if(!strcmp(ins->args[0],"ldow"))
+		{
+			gen_ldo(ins,3);
+		}
+		else if(!strcmp(ins->args[0],"ldol"))
+		{
+			gen_ldo(ins,5);
+		}
+		else if(!strcmp(ins->args[0],"stob"))
+		{
+			gen_sto(ins,1);
+		}
+		else if(!strcmp(ins->args[0],"stow"))
+		{
+			gen_sto(ins,3);
+		}
+		else if(!strcmp(ins->args[0],"stol"))
+		{
+			gen_sto(ins,5);
+		}
 		else if(!strcmp(ins->args[0],"push"))
 		{
 			gen_push(ins);
@@ -591,6 +615,10 @@ void gen_code(struct ins *ins)
 		else if(!strcmp(ins->args[0],"adr"))
 		{
 			gen_adr(ins);
+		}
+		else if(!strcmp(ins->args[0],"adro"))
+		{
+			gen_adro(ins);
 		}
 		else if(!strcmp(ins->args[0],"del"))
 		{

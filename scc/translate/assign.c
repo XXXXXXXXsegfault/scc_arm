@@ -29,6 +29,10 @@ void calculate_assign(struct syntax_tree *root,struct expr_ret *ret,char *op1,ch
 		}
 		t=get_decl_type(decl1);
 		c_write(op2,strlen(op2));
+		if(left.ptr_offset)
+		{
+			c_write("o",1);
+		}
 		if(!strcmp(t->name,"pointer"))
 		{
 			c_write("l ",2);
@@ -84,6 +88,11 @@ void calculate_assign(struct syntax_tree *root,struct expr_ret *ret,char *op1,ch
 	c_write(name,strlen(name));
 	c_write(" ",1);
 	c_write(str,strlen(str));
+	if(left.needs_deref&&left.ptr_offset)
+	{
+		c_write(" ",1);
+		c_write_num(left.ptr_offset);
+	}
 	c_write("\n",1);
 	free(str);
 	ret->is_lval=0;

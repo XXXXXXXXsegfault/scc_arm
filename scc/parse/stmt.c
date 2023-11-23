@@ -400,6 +400,24 @@ struct syntax_tree *parse_label_stmt(void)
 	next();
 	return ret;
 }
+struct syntax_tree *parse_namespace(void)
+{
+	struct syntax_tree *ret,*node;
+	if(strcmp(cstr,"namespace"))
+	{
+		return 0;
+	}
+	ret=mkst("namespace",0,line,col);
+	next();
+	node=parse_id_null();
+	st_add_subtree(ret,node);
+	if(strcmp(cstr,";"))
+	{
+		error(line,col,"expected \';\' after expression.");
+	}
+	next();
+	return ret;
+}
 struct syntax_tree *parse_stmt(void)
 {
 	struct syntax_tree *ret;
@@ -518,4 +536,26 @@ struct syntax_tree *parse_fundef(void)
 		return ret;
 	}
 	return 0;
+}
+struct syntax_tree *parse_stackoverflowprotection_on(void)
+{
+	struct syntax_tree *ret,*node;
+	if(strcmp(cstr,"stackoverflowprotection_on"))
+	{
+		return 0;
+	}
+	ret=mkst("stkofp_on",0,line,col);
+	next();
+	return ret;
+}
+struct syntax_tree *parse_stackoverflowprotection_off(void)
+{
+	struct syntax_tree *ret,*node;
+	if(strcmp(cstr,"stackoverflowprotection_off"))
+	{
+		return 0;
+	}
+	ret=mkst("stkofp_off",0,line,col);
+	next();
+	return ret;
 }

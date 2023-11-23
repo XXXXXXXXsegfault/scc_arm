@@ -2,7 +2,7 @@ void calculate_sub(struct syntax_tree *root,struct expr_ret *ret)
 {
 	struct expr_ret left,right;
 	struct syntax_tree *decl1;
-	long int scale;
+	int scale;
 	int r_scale;
 	scale=1;
 	r_scale=0;
@@ -42,7 +42,7 @@ void calculate_sub(struct syntax_tree *root,struct expr_ret *ret)
 		{
 			scale=1;
 		}
-		new_type=mkst("s32",0,left.type->line,left.type->col);
+		new_type=mkst("s64",0,left.type->line,left.type->col);
 		new_decl=mkst("Identifier","<NULL>",left.type->line,left.type->col);
 		r_scale=1;
 	}

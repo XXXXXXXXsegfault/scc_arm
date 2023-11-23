@@ -1,4 +1,4 @@
-unsigned long int type_size(struct syntax_tree *type,struct syntax_tree *decl);
+unsigned int type_size(struct syntax_tree *type,struct syntax_tree *decl);
 int is_pointer(struct syntax_tree *decl);
 struct syntax_tree *array_function_to_pointer(struct syntax_tree *decl);
 void translate_block(struct syntax_tree *root,int push);
@@ -87,7 +87,8 @@ void struct_check(struct syntax_tree *type)
 void decl_check(struct syntax_tree *type,struct syntax_tree *decl)
 {
 	struct syntax_tree *t;
-	int x;
+	int x,y;
+	char *id1,*id2;
 	t=decl;
 	while(strcmp(decl->name,"Identifier"))
 	{
@@ -167,6 +168,18 @@ void decl_check(struct syntax_tree *type,struct syntax_tree *decl)
 			if(!strcmp(t->name,"function"))
 			{
 				error(t->line,t->col,"cannot use function as structure or union member.");
+			}
+			id1=get_decl_id(type->subtrees[x+1]);
+			y=x+2;
+			while(y<type->count_subtrees)
+			{
+				id2=get_decl_id(type->subtrees[y+1]);
+				t=type->subtrees[y+1];
+				if(!strcmp(id1,id2))
+				{
+					error(t->line,t->col,"duplicate member name.");
+				}
+				y+=2;
 			}
 			x+=2;
 		}
@@ -282,12 +295,14 @@ int type_cmp(struct syntax_tree *type1,struct syntax_tree *decl1,struct syntax_t
 	}
 	return 1;
 }
-void check_decl1(struct syntax_tree *type,struct syntax_tree *decl)
+void check_decl1(struct syntax_tree *type,struct syntax_tree *decl,char *name)
 {
-	char *name;
 	struct id_tab *id;
 	struct syntax_tree *decl1;
-	name=get_decl_id(decl);
+	if(name==0)
+	{
+		name=get_decl_id(decl);
+	}
 	if(!strcmp(name,"<NULL>"))
 	{
 		return;
@@ -300,12 +315,14 @@ void check_decl1(struct syntax_tree *type,struct syntax_tree *decl)
 		}
 	}
 }
-int check_decl2(struct syntax_tree *type,struct syntax_tree *decl)
+int check_decl2(struct syntax_tree *type,struct syntax_tree *decl,char *name)
 {
-	char *name;
 	struct id_tab *id;
 	struct syntax_tree *decl1;
-	name=get_decl_id(decl);
+	if(name==0)
+	{
+		name=get_decl_id(decl);
+	}
 	if(!strcmp(name,"<NULL>"))
 	{
 		return 0;
@@ -314,11 +331,11 @@ int check_decl2(struct syntax_tree *type,struct syntax_tree *decl)
 	{
 		if(id->def)
 		{
-			error(type->line,type->col,"identifier redefined.");
+			error(decl->line,decl->col,"identifier redefined.");
 		}
 		if(type_cmp(type,decl,id->type,id->decl))
 		{
-			error(type->line,type->col,"identifier redeclared as different type.");
+			error(decl->line,decl->col,"identifier redeclared as different type.");
 		}
 		return 1;
 	}
@@ -327,8 +344,8 @@ int check_decl2(struct syntax_tree *type,struct syntax_tree *decl)
 void add_decl(struct syntax_tree *type,struct syntax_tree *decl,int nodefine,int force_global,struct syntax_tree *init,int no_change_name)
 {
 	int global,class;
-	long int array_size;
-	long int size;
+	int array_size;
+	int size;
 	char *name;
 	struct syntax_tree *decl1,*decl2;
 	struct expr_ret result;
@@ -344,6 +361,16 @@ void add_decl(struct syntax_tree *type,struct syntax_tree *decl,int nodefine,int
 	{
 		global=1;
 		class=1;
+		decl2=decl_next(decl);
+		if(is_pointer(decl2))
+		{
+			t_env.func_type=0;
+		}
+		else
+		{
+			t_env.func_type=0;
+		}
+		syntax_tree_release(decl2);
 	}
 	else
 	{
@@ -361,7 +388,7 @@ void add_decl(struct syntax_tree *type,struct syntax_tree *decl,int nodefine,int
 		}
 		else if(!strcmp(decl1->name,"array_nosize"))
 		{
-			class=2;
+			error(decl->line,decl->col,"cannot determine array size.");
 		}
 	}
 	if(array_size==-1&&init&&!strcmp(init->name,"init"))
@@ -370,7 +397,17 @@ void add_decl(struct syntax_tree *type,struct syntax_tree *decl,int nodefine,int
 	}
 	if(global||no_change_name)
 	{
-		name=xstrdup(get_decl_id(decl));
+		char *ns;
+		if(global&&strcmp(get_decl_id(decl),"<NULL>")&&(ns=get_namespace()))
+		{
+			name=xstrdup(ns);
+			name=str_s_app(name,"__");
+			name=str_s_app(name,get_decl_id(decl));
+		}
+		else
+		{
+			name=xstrdup(get_decl_id(decl));
+		}
 	}
 	else
 	{
@@ -381,14 +418,32 @@ void add_decl(struct syntax_tree *type,struct syntax_tree *decl,int nodefine,int
 	}
 	if(nodefine)
 	{
-		check_decl1(type,decl);
+		if(global)
+		{
+			check_decl1(type,decl,name);
+		}
+		else
+		{
+			check_decl1(type,decl,0);
+		}
 	}
 	else
 	{
-		if(check_decl2(type,decl)&&class!=1)
+		if(global)
 		{
-			free(name);
-			return;
+			if(check_decl2(type,decl,name)&&class!=1)
+			{
+				free(name);
+				return;
+			}
+		}
+		else
+		{
+			if(check_decl2(type,decl,0)&&class!=1)
+			{
+				free(name);
+				return;
+			}
 		}
 	}
 	if(class==0)
@@ -543,6 +598,7 @@ void translate_fundef(struct syntax_tree *root)
 	}
 	decl_check(type,decl);
 	add_decl(type,decl,0,0,0,0);
+	++t_env.func_num;
 	c_write("arglist\n",8);
 	x=1;
 	translate_stack_push();
@@ -557,11 +613,11 @@ void translate_fundef(struct syntax_tree *root)
 	translate_stack_pop();
 	c_write("endf\n",5);
 }
-unsigned long int type_size(struct syntax_tree *type,struct syntax_tree *decl)
+unsigned int type_size(struct syntax_tree *type,struct syntax_tree *decl)
 {
 	struct syntax_tree *decl1,*t,*mlist;
 	struct expr_ret result;
-	unsigned long int ret,size;
+	unsigned int ret,size;
 	int x;
 	decl1=get_decl_type(decl);
 	if(!strcmp(decl1->name,"pointer"))
@@ -769,11 +825,32 @@ int is_void(struct syntax_tree *type,struct syntax_tree *decl)
 }
 int if_type_compat(struct syntax_tree *type,struct syntax_tree *decl,struct syntax_tree *type2,struct syntax_tree *decl2,int option)
 {
+	int s1,s2;
 	if(is_void(type,decl)||is_void(type2,decl2))
 	{
 		return 1;
 	}
+	s1=is_basic_type(type)&&is_basic_decl(decl)||is_pointer_array_function(decl);
+	s2=is_basic_type(type2)&&is_basic_decl(decl2)||is_pointer_array_function(decl2);
+	if(!s1||!s2)
+	{
+		return 1;
+	}
 	return 0;
+}
+int is_integer_type(struct syntax_tree *type,struct syntax_tree *decl)
+{
+	int s1;
+	if(is_void(type,decl))
+	{
+		return 0;
+	}
+	s1=is_basic_type(type)&&is_basic_decl(decl)||is_pointer_array_function(decl);
+	if(!s1)
+	{
+		return 0;
+	}
+	return 1;
 }
 struct syntax_tree *array_function_to_pointer(struct syntax_tree *decl)
 {
@@ -803,10 +880,10 @@ void array_function_to_pointer2(struct syntax_tree **decl)
 	syntax_tree_release(*decl);
 	*decl=decl1;
 }
-long int get_member_offset(struct syntax_tree *type,char *name)
+int get_member_offset(struct syntax_tree *type,char *name)
 {
 	int x;
-	long int off;
+	int off;
 	off=0;
 	if(!strcmp(type->name,"union"))
 	{

@@ -4,10 +4,24 @@ void calculate_call(struct syntax_tree *root,struct expr_ret *ret)
 	struct syntax_tree *type,*decl,*decl1;
 	struct expr_ret result,func;
 	char *name,*new_name;
+	char *stk_tmpname;
+	if(stkoverflowprot_state)
+	{
+		stk_tmpname=mktmpname();
+		c_write("local u32 ",10);
+		c_write(stk_tmpname,strlen(stk_tmpname));
+		c_write("\ncall ",6);
+		c_write(stk_tmpname,strlen(stk_tmpname));
+		c_write(" __stackdepth_inc\n",18);
+	}
 	calculate_expr(root->subtrees[0],&func);
 	deref_ptr(&func,root->line,root->col);
 	if(!is_function(func.decl))
 	{
+		if(!is_pointer_array(func.decl))
+		{
+			error(root->line,root->col,"calling a non-function.");
+		}
 		decl=decl_next(func.decl);
 		syntax_tree_release(func.decl);
 		func.decl=decl;
@@ -27,6 +41,10 @@ void calculate_call(struct syntax_tree *root,struct expr_ret *ret)
 		--x;
 		calculate_expr(root->subtrees[x],&result);
 		deref_ptr(&result,root->subtrees[x]->line,root->subtrees[x]->col);
+		if(if_type_compat(result.type,result.decl,decl1->subtrees[x*2-1],decl1->subtrees[x*2],1))
+		{
+			error(root->line,root->col,"incompatible type.");
+		}
 		c_write("push ",5);
 		if(result.is_const)
 		{
@@ -56,7 +74,6 @@ void calculate_call(struct syntax_tree *root,struct expr_ret *ret)
 		decl1->subtrees[0]->value=new_name;
 	}
 	add_decl(type,decl,0,0,0,1);
-
 	c_write("call ",5);
 	c_write(new_name,strlen(new_name));
 	c_write(" ",1);
@@ -81,4 +98,11 @@ void calculate_call(struct syntax_tree *root,struct expr_ret *ret)
 	ret->needs_deref=0;
 
 	expr_ret_release(&func);
+	if(stkoverflowprot_state)
+	{
+		c_write("call ",5);
+		c_write(stk_tmpname,strlen(stk_tmpname));
+		c_write(" __stackdepth_dec\n",18);
+		free(stk_tmpname);
+	}
 }

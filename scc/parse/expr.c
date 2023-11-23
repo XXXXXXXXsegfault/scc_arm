@@ -40,25 +40,13 @@ struct syntax_tree *parse_num_id(void)
 		s=0;
 		while(cstr[x])
 		{
-			if(cstr[x]=='.')
-			{
-				s=1;
-				break;
-			}
 			++x;
 		}
 		if(cstr[0]=='\''||cstr[0]=='\"')
 		{
 			s=0;
 		}
-		if(s)
-		{
-			ret=mkst("FConstant",cstr,line,col);
-		}
-		else
-		{
-			ret=mkst("Constant",cstr,line,col);
-		}
+		ret=mkst("Constant",cstr,line,col);
 		next();
 	}
 	else if(cstr[0]>='A'&&cstr[0]<='Z'||cstr[0]>='a'&&cstr[0]<='z'||cstr[0]=='_')
@@ -479,7 +467,7 @@ struct syntax_tree *parse_expr_3(void)
 struct syntax_tree *parse_sizeof_type(void)
 {
 	struct l_word_list *oldword;
-	long int l,c;
+	int l,c;
 	struct syntax_tree *node,*ret;
 	oldword=current;
 	l=line;
@@ -519,7 +507,7 @@ struct syntax_tree *parse_sizeof_type(void)
 struct syntax_tree *parse_cast(void)
 {
 	struct l_word_list *oldword;
-	long int l,c;
+	int l,c;
 	struct syntax_tree *node,*ret;
 	oldword=current;
 	l=line;

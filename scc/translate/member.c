@@ -1,7 +1,8 @@
+
 void calculate_member(struct syntax_tree *root,struct expr_ret *ret)
 {
 	struct syntax_tree *mlist,*type,*decl,*decl1;
-	long int off;
+	int off;
 	struct expr_ret result;
 	char *new_name;
 
@@ -14,6 +15,7 @@ void calculate_member(struct syntax_tree *root,struct expr_ret *ret)
 			error(root->line,root->col,"bad member name.");
 		}
 		syntax_tree_release(decl1);
+		ret->ptr_offset=result.ptr_offset;
 	}
 	else
 	{
@@ -34,15 +36,16 @@ void calculate_member(struct syntax_tree *root,struct expr_ret *ret)
 	}
 	decl=get_member_decl(mlist,root->subtrees[1]->value);
 	off=get_member_offset(mlist,root->subtrees[1]->value);
-
 	type=syntax_tree_dup(type);
-	decl=get_addr(decl);
 
-	new_name=mktmpname();
+
+	decl=get_addr(decl);
+	new_name=xstrdup(get_decl_id(result.decl));
 	decl1=get_decl_type(decl);
 	free(decl1->subtrees[0]->value);
 	decl1->subtrees[0]->value=new_name;
 
+	/*
 	add_decl(type,decl,0,0,0,1);
 
 	c_write("add ",4);
@@ -55,6 +58,9 @@ void calculate_member(struct syntax_tree *root,struct expr_ret *ret)
 	c_write(new_name,strlen(new_name));
 	c_write("\n",1);
 	free(new_name);
+*/
+
+	ret->ptr_offset+=off;
 
 	ret->is_const=0;
 	ret->is_lval=1;
@@ -66,7 +72,7 @@ void calculate_member(struct syntax_tree *root,struct expr_ret *ret)
 void calculate_member_ptr(struct syntax_tree *root,struct expr_ret *ret)
 {
 	struct syntax_tree *mlist,*type,*decl,*decl1;
-	long int off;
+	int off;
 	struct expr_ret result;
 	char *new_name;
 
@@ -98,6 +104,7 @@ void calculate_member_ptr(struct syntax_tree *root,struct expr_ret *ret)
 	type=syntax_tree_dup(type);
 	decl=get_addr(decl);
 
+	/*
 	new_name=mktmpname();
 	decl1=get_decl_type(decl);
 	free(decl1->subtrees[0]->value);
@@ -115,11 +122,17 @@ void calculate_member_ptr(struct syntax_tree *root,struct expr_ret *ret)
 	c_write(new_name,strlen(new_name));
 	c_write("\n",1);
 	free(new_name);
+	*/
+	new_name=xstrdup(get_decl_id(result.decl));
+	decl1=get_decl_type(decl);
+	free(decl1->subtrees[0]->value);
+	decl1->subtrees[0]->value=new_name;
 
 	ret->is_const=0;
 	ret->is_lval=1;
 	ret->needs_deref=1;
 	ret->type=type;
 	ret->decl=decl;
+	ret->ptr_offset=off;
 	expr_ret_release(&result);
 }

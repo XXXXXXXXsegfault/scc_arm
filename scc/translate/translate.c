@@ -30,13 +30,13 @@ struct id_tab
 	struct syntax_tree *type;
 	struct syntax_tree *decl;
 	struct id_tab *next;
-	long int def;
+	int def;
 };
 struct label_tab
 {
 	char *name;
-	long int line;
-	long int col;
+	int line;
+	int col;
 	struct label_tab *next;
 } *label_use,*label_def[1021];
 struct struct_tab
@@ -48,36 +48,48 @@ struct struct_tab
 struct translate_stack
 {
 	struct id_tab *local_id[1021];
-	long int num;
+	int num;
 	struct translate_stack *next;
 };
 struct control_labels
 {
-	long int l1;
-	long int l2;
-	long int l3;
+	int l1;
+	int l2;
+	int l3;
 	struct control_labels *next;
 };
+int stkoverflowprot_state;
+char *current_namespace;
+char *get_namespace(void)
+{
+	if(current_namespace==0||!strcmp(current_namespace,"<NULL>"))
+	{
+		return 0;
+	}
+	return current_namespace;
+}
 struct translate_env
 {
-	long int next_num;
-	long int next_label;
+	int next_num;
+	int next_label;
 	struct id_tab *global_id[1021];
 	struct struct_tab *struct_tab[1021];
 	struct struct_tab *union_tab[1021];
 	struct translate_stack *stack;
 	int write;
 	int label_in_use;
-	long int func_num;
+	int func_num;
 	struct control_labels *label;
 	struct control_labels *break_label;
+	int func_type;
 } t_env;
 struct expr_ret
 {
-	unsigned long int value;
+	unsigned int value;
 	int is_lval;
 	short int is_const;
 	short int needs_deref;
+	int ptr_offset;
 	struct syntax_tree *type;
 	struct syntax_tree *decl;
 };
@@ -87,7 +99,7 @@ void expr_ret_release(struct expr_ret *ret)
 	syntax_tree_release(ret->decl);
 }
 void calculate_expr(struct syntax_tree *root,struct expr_ret *ret);
-struct struct_tab *struct_tab_find(struct struct_tab **tab,char *name)
+struct struct_tab *_struct_tab_find(struct struct_tab **tab,char *name)
 {
 	int hash;
 	struct struct_tab *node;
@@ -103,16 +115,54 @@ struct struct_tab *struct_tab_find(struct struct_tab **tab,char *name)
 	}
 	return 0;
 }
-void struct_tab_add(struct struct_tab **tab,char *name,struct syntax_tree *decl)
+struct struct_tab *struct_tab_find(struct struct_tab **tab,char *name)
+{
+	char *new_name;
+	char *ns;
+	struct struct_tab *ret;
+	ns=get_namespace();
+	if(ns)
+	{
+		new_name=xstrdup(ns);
+		new_name=str_s_app(new_name,"__");
+		new_name=str_s_app(new_name,name);
+		ret=_struct_tab_find(tab,new_name);
+		free(new_name);
+		if(ret)
+		{
+			return ret;
+		}
+	}
+	return _struct_tab_find(tab,name);
+}
+void _struct_tab_add(struct struct_tab **tab,char *name,struct syntax_tree *decl)
 {
 	int hash;
 	struct struct_tab *node;
 	hash=name_hash(name);
-	node=xmalloc(sizeof(*node));
+	node=xmalloc(sizeof(node));
 	node->name=name;
 	node->decl=decl;
 	node->next=tab[hash];
 	tab[hash]=node;
+}
+void struct_tab_add(struct struct_tab **tab,char *name,struct syntax_tree *decl)
+{
+	char *new_name;
+	char *ns;
+	struct struct_tab *ret;
+	ns=get_namespace();
+	if(ns)
+	{
+		new_name=xstrdup(ns);
+		new_name=str_s_app(new_name,"__");
+		new_name=str_s_app(new_name,name);
+		_struct_tab_add(tab,new_name,decl);
+	}
+	else
+	{
+		_struct_tab_add(tab,name,decl);
+	}
 }
 struct id_tab *id_tab_find(struct id_tab **tab,char *name)
 {
@@ -148,6 +198,8 @@ struct id_tab *id_find(char *name)
 	char *name1;
 	struct translate_stack *node;
 	struct id_tab *ret;
+	char *new_name;
+	char *ns;
 	node=t_env.stack;
 	while(node)
 	{
@@ -168,6 +220,19 @@ struct id_tab *id_find(char *name)
 		free(name1);
 		node=node->next;
 	}
+	ns=get_namespace();
+	if(ns)
+	{
+		new_name=xstrdup(ns);
+		new_name=str_s_app(new_name,"__");
+		new_name=str_s_app(new_name,name);
+		ret=id_tab_find(t_env.global_id,new_name);
+		free(new_name);
+		if(ret)
+		{
+			return ret;
+		}
+	}
 	return id_tab_find(t_env.global_id,name);
 }
 struct id_tab *id_find2(char *name)
@@ -175,6 +240,8 @@ struct id_tab *id_find2(char *name)
 	char *name1;
 	struct translate_stack *node;
 	struct id_tab *ret;
+	char *new_name;
+	char *ns;
 	node=t_env.stack;
 	if(node)
 	{
@@ -194,6 +261,19 @@ struct id_tab *id_find2(char *name)
 		}
 		free(name1);
 		return 0;
+	}
+	ns=get_namespace();
+	if(ns)
+	{
+		new_name=xstrdup(ns);
+		new_name=str_s_app(new_name,"__");
+		new_name=str_s_app(new_name,name);
+		ret=id_tab_find(t_env.global_id,new_name);
+		free(new_name);
+		if(ret)
+		{
+			return ret;
+		}
 	}
 	return id_tab_find(t_env.global_id,name);
 }
@@ -258,25 +338,12 @@ int is_global(void)
 	}
 	return 0;
 }
-char outc_buf[65536];
-int outc_x;
 void outc(char c)
 {
-	int n;
-	if(outc_x==65536)
-	{
-		write(fdo,outc_buf,outc_x);
-		outc_x=0;
-	}
-	outc_buf[outc_x]=c;
-	++outc_x;
+	stream_putc(c);
 }
 void out_flush(void)
 {
-	if(outc_x)
-	{
-		write(fdo,outc_buf,outc_x);
-	}
 }
 void c_write(char *buf,int size)
 {
@@ -290,6 +357,13 @@ void c_write(char *buf,int size)
 		++buf;
 		--size;
 	}
+}
+void c_write_num(unsigned num)
+{
+	char *buf;
+	buf=str_i_app(0,num);
+	c_write(buf,strlen(buf));
+	free(buf);
 }
 #include "decl.c"
 #include "expr.c"
@@ -308,9 +382,21 @@ void translate_file(struct syntax_tree *root)
 		{
 			translate_fundef(root->subtrees[x]);
 		}
+		else if(!strcmp(root->subtrees[x]->name,"namespace"))
+		{
+			current_namespace=root->subtrees[x]->subtrees[0]->value;
+		}
 		else if(!strcmp(root->subtrees[x]->name,"asm"))
 		{
 			translate_asm(root->subtrees[x]);
+		}
+		else if(!strcmp(root->subtrees[x]->name,"stkofp_on"))
+		{
+			stkoverflowprot_state=1;
+		}
+		else if(!strcmp(root->subtrees[x]->name,"stkofp_off"))
+		{
+			stkoverflowprot_state=0;
 		}
 		++x;
 	}

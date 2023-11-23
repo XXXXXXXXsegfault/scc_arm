@@ -271,6 +271,7 @@ void ins_add(char *str)
 	int x;
 	struct ins *node;
 	node=xmalloc(sizeof(*node));
+	memset(node,0,sizeof(*node));
 	node->line=current_line;
 	node->count_args=0;
 	node->op=0;
@@ -307,6 +308,10 @@ void ins_add(char *str)
 				node->op=1;
 			}
 			if(!strcmp(node->args[0],"adr"))
+			{
+				node->op=11;
+			}
+			if(!strcmp(node->args[0],"adro"))
 			{
 				node->op=11;
 			}
@@ -378,10 +383,6 @@ void ins_add(char *str)
 			{
 				node->op=5;
 			}
-			if(!strcmp(node->args[0],"stq"))
-			{
-				node->op=5;
-			}
 			if(!strcmp(node->args[0],"ldb"))
 			{
 				node->op=6;
@@ -394,7 +395,27 @@ void ins_add(char *str)
 			{
 				node->op=6;
 			}
-			if(!strcmp(node->args[0],"ldq"))
+			if(!strcmp(node->args[0],"stob"))
+			{
+				node->op=5;
+			}
+			if(!strcmp(node->args[0],"stow"))
+			{
+				node->op=5;
+			}
+			if(!strcmp(node->args[0],"stol"))
+			{
+				node->op=5;
+			}
+			if(!strcmp(node->args[0],"ldob"))
+			{
+				node->op=6;
+			}
+			if(!strcmp(node->args[0],"ldow"))
+			{
+				node->op=6;
+			}
+			if(!strcmp(node->args[0],"ldol"))
 			{
 				node->op=6;
 			}
@@ -977,7 +998,7 @@ void reg_init(void)
 					fstart->stack_size-=32;
 					if(x>=8)
 					{
-						fstart->stack_size-=(x-10)*4;
+						fstart->stack_size-=(x-8)*4;
 					}
 					fstart->stack_size&=0xfffffff8;
 				}

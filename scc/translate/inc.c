@@ -2,7 +2,7 @@ void calculate_inc(struct syntax_tree *root,struct expr_ret *ret)
 {
 	struct expr_ret result;
 	struct syntax_tree *decl1,*decl2;
-	long int scale,size;
+	int scale,size;
 	struct syntax_tree *new_type,*new_decl;
 	char *new_name,*old_name,*str;
 	scale=1;
@@ -15,6 +15,10 @@ void calculate_inc(struct syntax_tree *root,struct expr_ret *ret)
 	{
 		new_name=mktmpname();
 		decl1=decl_next(result.decl);
+		if(!is_integer_type(result.type,decl1))
+		{
+			error(root->line,root->col,"incompatible type.");
+		}
 		if(is_pointer_array(decl1))
 		{
 			decl2=decl_next(decl1);
@@ -35,7 +39,8 @@ void calculate_inc(struct syntax_tree *root,struct expr_ret *ret)
 			error(root->line,root->col,"invalid operand for \'++\'.");
 		}
 		new_type=syntax_tree_dup(result.type);
-		new_decl=syntax_tree_dup(result.decl);
+	//	new_decl=syntax_tree_dup(result.decl);
+		new_decl=syntax_tree_dup(decl1);
 		decl2=get_decl_type(new_decl);
 		if(!strcmp(decl2->name,"Identifier"))
 		{
@@ -48,21 +53,44 @@ void calculate_inc(struct syntax_tree *root,struct expr_ret *ret)
 			decl2->subtrees[0]->value=new_name;
 		}
 		add_decl(new_type,new_decl,0,0,0,1);
-		if(size==1)
+		if(result.ptr_offset)
 		{
-			c_write("ldb ",4);
+			if(size==1)
+			{
+				c_write("ldob ",5);
+			}
+			else if(size==2)
+			{
+				c_write("ldow ",5);
+			}
+			else if(size==4)
+			{
+				c_write("ldol ",5);
+			}
 		}
-		else if(size==2)
+		else
 		{
-			c_write("ldw ",4);
-		}
-		else if(size==4)
-		{
-			c_write("ldl ",4);
+			if(size==1)
+			{
+				c_write("ldb ",4);
+			}
+			else if(size==2)
+			{
+				c_write("ldw ",4);
+			}
+			else if(size==4)
+			{
+				c_write("ldl ",4);
+			}
 		}
 		c_write(new_name,strlen(new_name));
 		c_write(" ",1);
 		c_write(old_name,strlen(old_name));
+		if(result.ptr_offset)
+		{
+			c_write(" ",1);
+			c_write_num(result.ptr_offset);
+		}
 		c_write("\n",1);
 
 		c_write("add ",4);
@@ -75,21 +103,45 @@ void calculate_inc(struct syntax_tree *root,struct expr_ret *ret)
 		c_write(str,strlen(str));
 		c_write("\n",1);
 		free(str);
-		if(size==1)
+		if(result.ptr_offset)
 		{
-			c_write("stb ",4);
+			if(size==1)
+			{
+				c_write("stob ",5);
+			}
+			else if(size==2)
+			{
+				c_write("stow ",5);
+			}
+			else if(size==4)
+			{
+				c_write("stol ",5);
+			}
 		}
-		else if(size==2)
+		else
 		{
-			c_write("stw ",4);
+			if(size==1)
+			{
+				c_write("stb ",4);
+			}
+			else if(size==2)
+			{
+				c_write("stw ",4);
+			}
+			else if(size==4)
+			{
+				c_write("stl ",4);
+			}
 		}
-		else if(size==4)
-		{
-			c_write("stl ",4);
-		}
+
 		c_write(old_name,strlen(old_name));
 		c_write(" ",1);
 		c_write(new_name,strlen(new_name));
+		if(result.ptr_offset)
+		{
+			c_write(" ",1);
+			c_write_num(result.ptr_offset);
+		}
 		c_write("\n",1);
 
 		free(old_name);
@@ -103,6 +155,10 @@ void calculate_inc(struct syntax_tree *root,struct expr_ret *ret)
 	}
 	else
 	{
+		if(!is_integer_type(result.type,result.decl))
+		{
+			error(root->line,root->col,"incompatible type.");
+		}
 		if(is_pointer_array(result.decl))
 		{
 			decl2=decl_next(result.decl);

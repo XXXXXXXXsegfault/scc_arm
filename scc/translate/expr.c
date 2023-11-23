@@ -1,4 +1,4 @@
-long int new_tmp_name;
+int new_tmp_name;
 char *mktmpname(void)
 {
 	char *ret;
@@ -7,9 +7,9 @@ char *mktmpname(void)
 	ret=str_i_app(ret,new_tmp_name);
 	return ret;
 }
-unsigned long int const_to_num(char *str)
+unsigned int const_to_num(char *str)
 {
-	unsigned long int ret;
+	unsigned int ret;
 	int x;
 	ret=0;
 	if(str[0]=='\'')
@@ -258,6 +258,24 @@ void deref_ptr(struct expr_ret *ret,int line,int col)
 		old_name=t->value;
 		t->value=str;
 	}
+	else if(ret->ptr_offset)
+	{
+		s=0;
+		old_name=t->subtrees[0]->value;
+		t->subtrees[0]->value=str;
+		array_function_to_pointer2(&ret->decl);
+		str=get_decl_id(ret->decl);
+		add_decl(ret->type,ret->decl,0,0,0,1);
+		c_write("add ",4);
+		c_write(str,strlen(str));
+		c_write(" ",1);
+		c_write(old_name,strlen(old_name));
+		c_write(" ",1);
+		c_write_num(ret->ptr_offset);
+		ret->ptr_offset=0;
+		c_write("\n",1);
+		free(old_name);
+	}
 	else
 	{
 		s=0;
@@ -266,16 +284,29 @@ void deref_ptr(struct expr_ret *ret,int line,int col)
 	if(s)
 	{
 		add_decl(ret->type,ret->decl,0,0,0,1);
-		c_write("ld",2);
+		if(ret->ptr_offset)
+		{
+			c_write("ldo",3);
+		}
+		else
+		{
+			c_write("ld",2);
+		}
 		c_write(size,2);
 		c_write(str,strlen(str));
 		c_write(" ",1);
 		c_write(old_name,strlen(old_name));
+		if(ret->ptr_offset)
+		{
+			c_write(" ",1);
+			c_write_num(ret->ptr_offset);
+			ret->ptr_offset=0;
+		}
 		c_write("\n",1);
 		free(old_name);
 	}
 }
-void scale_result(struct syntax_tree *type,struct syntax_tree *decl,long int scale)
+void scale_result(struct syntax_tree *type,struct syntax_tree *decl,int scale)
 {
 	char *str,*old_str;
 	struct syntax_tree *decl1;
@@ -306,7 +337,7 @@ void scale_result(struct syntax_tree *type,struct syntax_tree *decl,long int sca
 		free(old_str);
 	}
 }
-void r_scale_result(struct syntax_tree *type,struct syntax_tree *decl,long int scale)
+void r_scale_result(struct syntax_tree *type,struct syntax_tree *decl,int scale)
 {
 	char *str,*old_str;
 	struct syntax_tree *decl1;
@@ -366,6 +397,7 @@ void calculate_expr(struct syntax_tree *root,struct expr_ret *ret)
 {
 	struct expr_ret left;
 	memset(ret,0,sizeof(*ret));
+	memset(&left,0,sizeof(left));
 	if(!strcmp(root->name,"Identifier"))
 	{
 		calculate_id(root,ret);

@@ -1,4 +1,4 @@
-long int condc,condc_levels,old_condc_levels,condc_else;
+int condc,condc_levels,old_condc_levels,condc_else;
 struct macro_tab2
 {
 	char *name;
@@ -156,7 +156,7 @@ char *sgetc(char *str,char *ret)
 }
 char *dir_name(char *str)
 {
-	long int x,x1;
+	int x,x1;
 	char *ret;
 	x=strlen(str);
 	if(x==0)
@@ -198,13 +198,13 @@ char *dir_name(char *str)
 	}
 	return ret;
 }
-void load_file(int dir_fd,char *name,int fd,int check);
+void load_file(char *current_dir,char *name,int fd,int check);
 
-void do_include(int dir_fd,char *name,long int line,char *str)
+void do_include(char *current_dir,char *name,int line,char *str)
 {
 	char c;
-	char *fname,*dname;
-	int new_dir_fd,new_fd;
+	char *fname,*dname,*new_dir;
+	int new_fd;
 	fname=0;
 	str=skip_spaces(str);
 	if(*str=='\"')
@@ -221,19 +221,21 @@ void do_include(int dir_fd,char *name,long int line,char *str)
 			fname=str_c_app(fname,c);
 		}
 		dname=dir_name(name);
-		new_dir_fd=openat(dir_fd,dname,0,0);
-		if(new_dir_fd<0)
-		{
-			error(name,line,"cannot open file.");
-		}
-		new_fd=openat(new_dir_fd,fname,0,0);
+		new_dir=xstrdup(current_dir);
+		new_dir=str_c_app(new_dir,'/');
+		new_dir=str_s_app(new_dir,dname);
+		free(dname);
+		dname=xstrdup(new_dir);
+		dname=str_c_app(dname,'/');
+		dname=str_s_app(dname,fname);
+		new_fd=open(dname,0,0);
 		if(new_fd<0)
 		{
 			error(name,line,"cannot open file.");
 		}
-		load_file(new_dir_fd,fname,new_fd,0);
-		close(new_dir_fd);
+		load_file(new_dir,fname,new_fd,0);
 		close(new_fd);
+		free(new_dir);
 		free(fname);
 		free(dname);
 		--include_level;
@@ -243,13 +245,13 @@ void do_include(int dir_fd,char *name,long int line,char *str)
 		error(name,line,"expected file name in #include.");
 	}
 }
-void load_file(int dir_fd,char *name,int fd,int check)
+void load_file(char *current_dir,char *name,int fd,int check)
 {
-	long int flines;
-	long int old_current_line;
+	int flines;
+	int old_current_line;
 	char *str,*str1;
 	struct lines_list *node;
-	long int len;
+	int len;
 	char *word;
 	flines=current_line;
 	while(str=read_line(fd))
@@ -261,7 +263,7 @@ void load_file(int dir_fd,char *name,int fd,int check)
 				if(!condc)
 				{
 					old_current_line=current_line;
-					do_include(dir_fd,name,current_line-flines,str1+7);
+					do_include(current_dir,name,current_line-flines,str1+7);
 					flines+=current_line-old_current_line;
 				}
 			}

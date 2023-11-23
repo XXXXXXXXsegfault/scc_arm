@@ -2,7 +2,7 @@ void calculate_add(struct syntax_tree *root,struct expr_ret *ret)
 {
 	struct expr_ret left,right;
 	struct syntax_tree *decl1;
-	long int scale;
+	int scale;
 	struct syntax_tree *new_type,*new_decl;
 	char *new_name;
 	scale=1;

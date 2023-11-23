@@ -3,7 +3,7 @@ void calculate_sizeof(struct syntax_tree *root,struct expr_ret *ret)
 	int w;
 	struct expr_ret result;
 	struct syntax_tree *type,*decl;
-	long int size;
+	int size;
 	w=t_env.write;
 	t_env.write=1;
 	calculate_expr(root->subtrees[0],&result);
@@ -30,7 +30,7 @@ void calculate_sizeof(struct syntax_tree *root,struct expr_ret *ret)
 }
 void calculate_sizeof_type(struct syntax_tree *root,struct expr_ret *ret)
 {
-	long int size;
+	int size;
 	struct syntax_tree *type;
 	type=get_struct_member_list(root->subtrees[0],0);
 	if(type==0)

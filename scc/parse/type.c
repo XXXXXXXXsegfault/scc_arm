@@ -12,9 +12,9 @@ struct syntax_tree *parse_id_null(void)
 }
 struct syntax_tree *parse_basic_type(void)
 {
-	int t[6];
+	int t[8];
 	int x;
-	long int l,c;
+	int l,c;
 	l=line;
 	c=col;
 	t[0]=0;
@@ -22,7 +22,6 @@ struct syntax_tree *parse_basic_type(void)
 	t[2]=0;
 	t[3]=0;
 	t[4]=0;
-	t[5]=0;
 	if(!strcmp(cstr,"void"))
 	{
 		next();
@@ -33,17 +32,17 @@ struct syntax_tree *parse_basic_type(void)
 		++t[x];
 		next();
 	}
-	if(t[0]>1||t[1]>1||t[2]>1||t[3]>2||t[4]>1||t[5]>1)
+	if(t[0]>1||t[1]>1||t[2]>1||t[3]>1||t[4]>1)
 	{
 		error(line,col,"invalid type.");
 	}
-	if(t[0]+t[1]>1||t[4]+t[5]>1||t[2]&&t[3])
+	if(t[0]+t[1]>1||t[3]+t[4]>1)
 	{
 		error(line,col,"invalid type.");
 	}
 	if(t[0])
 	{
-		if(t[4])
+		if(t[3])
 		{
 			return mkst("u8",0,l,c);
 		}
@@ -52,11 +51,11 @@ struct syntax_tree *parse_basic_type(void)
 			return mkst("s8",0,l,c);
 		}
 	}
-	else if(t[0]+t[1]+t[2]+t[3]+t[4]+t[5])
+	else if(t[0]+t[1]+t[2]+t[3]+t[4])
 	{
 		if(t[2])
 		{
-			if(t[4])
+			if(t[3])
 			{
 				return mkst("u16",0,l,c);
 			}
@@ -67,7 +66,7 @@ struct syntax_tree *parse_basic_type(void)
 		}
 		else
 		{
-			if(t[4])
+			if(t[3])
 			{
 				return mkst("u32",0,l,c);
 			}
@@ -143,7 +142,7 @@ struct syntax_tree *parse_decl(void);
 struct syntax_tree *parse_decl_array(void)
 {
 	struct syntax_tree *ret,*node;
-	long int l,c;
+	int l,c;
 	l=line;
 	c=col;
 	if(strcmp(cstr,"["))
@@ -307,7 +306,6 @@ void type_global_init(void)
 	basic_type_str[0]="char";
 	basic_type_str[1]="int";
 	basic_type_str[2]="short";
-	basic_type_str[3]="long";
-	basic_type_str[4]="unsigned";
-	basic_type_str[5]="signed";
+	basic_type_str[3]="unsigned";
+	basic_type_str[4]="signed";
 }
